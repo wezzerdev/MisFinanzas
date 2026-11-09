@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { Sun, Moon, ShieldCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Sun, Moon, ShieldCheck, LogOut } from "lucide-react";
 import { useTheme } from "@/components/theme/ThemeProvider";
 
 interface MobileHeaderProps {
@@ -10,7 +11,26 @@ interface MobileHeaderProps {
 }
 
 export const MobileHeader: React.FC<MobileHeaderProps> = () => {
+  const router = useRouter();
   const { theme, toggleTheme } = useTheme();
+
+  const handleLogout = async () => {
+    const confirmLogout = window.confirm("¿Deseas cerrar tu sesión segura?");
+    if (!confirmLogout) return;
+
+    try {
+      await fetch("/api/auth", { method: "DELETE" });
+    } catch (e) {
+      console.error(e);
+    }
+
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("finanzas_auth");
+      document.cookie = "finanzas_session=; path=/; max-age=0";
+    }
+
+    router.replace("/login");
+  };
 
   return (
     <header className="sticky top-0 z-30 w-full backdrop-blur-xl bg-white/90 dark:bg-[#0a0a0a]/90 border-b border-slate-200 dark:border-[#262626] px-5 pt-[max(0.875rem,env(safe-area-inset-top))] pb-3.5 transition-colors">
@@ -29,7 +49,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = () => {
                 Bóveda Personal
               </span>
               <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded-md">
-                <ShieldCheck className="w-2.5 h-2.5" /> SQLite
+                <ShieldCheck className="w-2.5 h-2.5" /> Supabase
               </span>
             </div>
             <h1 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">
@@ -38,7 +58,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = () => {
           </div>
         </div>
 
-        {/* Right actions: Theme toggle */}
+        {/* Right actions: Theme toggle & Logout */}
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -51,6 +71,16 @@ export const MobileHeader: React.FC<MobileHeaderProps> = () => {
             ) : (
               <Moon className="w-4 h-4 text-slate-700 transition-transform hover:-rotate-12" />
             )}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            title="Cerrar Bóveda / Sesión"
+            className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-[#121212] border border-slate-200 dark:border-[#262626] flex items-center justify-center text-slate-500 dark:text-neutral-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors shadow-xs active:scale-95"
+            aria-label="Cerrar Bóveda"
+          >
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
       </div>

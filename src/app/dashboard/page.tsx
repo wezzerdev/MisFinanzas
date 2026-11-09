@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import MobileHeader from "@/components/navigation/MobileHeader";
 import BottomNavBar, { NavTab } from "@/components/navigation/BottomNavBar";
 import AccountsGrid, { AccountItem } from "@/components/modules/AccountsGrid";
@@ -27,6 +28,7 @@ import {
 } from "lucide-react";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [accounts, setAccounts] = useState<AccountItem[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [debts, setDebts] = useState<DebtRecord[]>([]);
@@ -73,8 +75,14 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    // Auth Guard: Verificar sesión activa en cliente
+    const authSession = localStorage.getItem("finanzas_auth");
+    if (!authSession) {
+      router.replace("/login");
+      return;
+    }
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, router]);
 
   const totalBalance = accounts.reduce((acc, curr) => acc + curr.balance, 0);
 

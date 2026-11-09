@@ -12,11 +12,9 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
-  Fingerprint,
   Check,
   FileText,
   X,
-  Sparkles,
   Loader2,
   AlertCircle,
 } from "lucide-react";
@@ -40,71 +38,72 @@ export default function LoginPage() {
     e.preventDefault();
     setErrorMsg(null);
 
+    // 1. Verificación obligatoria de Términos y Condiciones
     if (!acceptedTerms) {
-      setErrorMsg("Debes aceptar los Términos y Condiciones y el Aviso de Privacidad.");
+      setErrorMsg("Es obligatorio aceptar los Términos y Condiciones y el Aviso de Privacidad para acceder.");
       return;
     }
 
     if (!email.trim() || !password) {
-      setErrorMsg("Completa todos los campos requeridos.");
+      setErrorMsg("Ingresa tu correo y contraseña.");
       return;
     }
 
-    if (mode === "register" && password !== confirmPassword) {
-      setErrorMsg("Las contraseñas no coinciden.");
-      return;
+    if (mode === "register") {
+      if (password.length < 4) {
+        setErrorMsg("La contraseña debe tener al menos 4 caracteres.");
+        return;
+      }
+      if (password !== confirmPassword) {
+        setErrorMsg("Las contraseñas no coinciden.");
+        return;
+      }
     }
 
     setLoading(true);
 
     try {
-      // Guardar token/sesión localmente
-      if (typeof window !== "undefined") {
-        localStorage.setItem(
-          "finanzas_auth",
-          JSON.stringify({
-            email: email.trim(),
-            name: name.trim() || email.split("@")[0],
-            authenticatedAt: new Date().toISOString(),
-          })
-        );
+      // Llamada al endpoint de autenticación segura
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: mode,
+          email: email.trim(),
+          password,
+          name: mode === "register" ? name.trim() : undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "No se pudo autenticar. Verifica tus credenciales.");
       }
 
-      // Pequeña pausa para feedback visual suave
-      await new Promise((res) => setTimeout(res, 500));
+      // Guardar sesión en cliente
+      if (typeof window !== "undefined") {
+        localStorage.setItem("finanzas_auth", JSON.stringify(data.user));
+        // Cookie fallback
+        document.cookie = `finanzas_session=active_${Date.now()}; path=/; max-age=2592000; SameSite=Lax`;
+      }
+
       router.push("/dashboard");
     } catch (err: any) {
-      setErrorMsg("Error al conectar con la bóveda. Intenta de nuevo.");
+      setErrorMsg(err.message || "Error al conectar con la bóveda. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleQuickAccess = () => {
-    if (!acceptedTerms) {
-      setAcceptedTerms(true);
-    }
-    if (typeof window !== "undefined") {
-      localStorage.setItem(
-        "finanzas_auth",
-        JSON.stringify({
-          email: "demo@finanzas.local",
-          name: "Bóveda Local",
-          authenticatedAt: new Date().toISOString(),
-        })
-      );
-    }
-    router.push("/dashboard");
-  };
-
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-slate-100 flex flex-col justify-between p-4 sm:p-6 select-none relative overflow-hidden">
-      {/* Luces de fondo difusas corporativas */}
+      {/* Luces y degradados de seguridad */}
       <div className="absolute -top-32 -left-32 w-80 h-80 rounded-full bg-[#009fdb]/10 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -right-32 w-80 h-80 rounded-full bg-[#153D64]/20 blur-3xl pointer-events-none" />
 
       {/* Top Bar con enlace a Landing */}
-      <header className="w-full max-w-md mx-auto flex items-center justify-between py-2 relative z-10">
+      <header className="w-full max-w-md mx-auto flex items-center justify-between py-2 relative z-10 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <Link
           href="/"
           className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white transition-colors"
@@ -112,7 +111,7 @@ export default function LoginPage() {
           <span>← Volver a Inicio</span>
         </Link>
         <span className="text-[11px] font-semibold text-[#009fdb] bg-[#009fdb]/10 border border-[#009fdb]/30 px-2.5 py-0.5 rounded-full">
-          Fintech Segura
+          Acceso Cifrado
         </span>
       </header>
 
@@ -130,7 +129,7 @@ export default function LoginPage() {
             <p className="text-xs text-slate-400 max-w-xs">
               {mode === "login"
                 ? "Ingresa tus credenciales para administrar tus cuentas, tarjetas y deudas."
-                : "Configura tu cuenta cifrada y mantén el control de tus finanzas personales."}
+                : "Registra tu cuenta para tener control privado de tus finanzas personales."}
             </p>
           </div>
 
@@ -180,6 +179,7 @@ export default function LoginPage() {
                     placeholder="Ej. Roberto Duarte"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    required
                     className="w-full bg-[#0a0a0a] border border-[#262626] rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-[#009fdb] min-h-[48px]"
                   />
                 </div>
@@ -263,7 +263,7 @@ export default function LoginPage() {
                 {acceptedTerms && <Check className="w-3.5 h-3.5 stroke-[3]" />}
               </button>
               <div className="text-[11px] text-slate-400 leading-tight">
-                <span>He leído y acepto los </span>
+                <span>He leído y acepto obligatoriamente los </span>
                 <button
                   type="button"
                   onClick={() => setIsTermsModalOpen(true)}
@@ -279,7 +279,7 @@ export default function LoginPage() {
                 >
                   Aviso de Privacidad
                 </button>
-                <span> de Finanzas PWA.</span>
+                <span> para usar la plataforma.</span>
               </div>
             </div>
 
@@ -294,7 +294,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 px-4 bg-[#009fdb] hover:bg-[#0088bd] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#009fdb]/25 flex items-center justify-center gap-2 transition-all min-h-[48px] disabled:opacity-50 mt-1"
+              className="w-full py-3.5 px-4 bg-[#009fdb] hover:bg-[#0088bd] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#009fdb]/25 flex items-center justify-center gap-2 transition-all min-h-[48px] disabled:opacity-50 mt-1 active:scale-98"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -305,31 +305,14 @@ export default function LoginPage() {
                 </>
               )}
             </button>
-
-            {/* Separador */}
-            <div className="flex items-center gap-3 my-1">
-              <div className="flex-1 h-px bg-[#262626]" />
-              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">o bien</span>
-              <div className="flex-1 h-px bg-[#262626]" />
-            </div>
-
-            {/* Botón Acceso Rápido / Local First */}
-            <button
-              type="button"
-              onClick={handleQuickAccess}
-              className="w-full py-3 px-4 bg-[#181818] hover:bg-[#222222] border border-[#262626] text-slate-300 font-semibold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors min-h-[46px]"
-            >
-              <Fingerprint className="w-4 h-4 text-[#009fdb]" />
-              <span>Acceso Rápido Local (Demo Bóveda)</span>
-            </button>
           </form>
         </div>
       </main>
 
       {/* Footer Legal */}
-      <footer className="w-full max-w-md mx-auto text-center py-2 relative z-10">
+      <footer className="w-full max-w-md mx-auto text-center py-2 relative z-10 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <p className="text-[10px] text-slate-500">
-          © {new Date().getFullYear()} Finanzas PWA · Banca Privada & Bóveda Local Cifrada.
+          © {new Date().getFullYear()} Finanzas PWA · Acceso Privado y Seguro.
         </p>
       </footer>
 
