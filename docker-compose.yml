@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  finanzas-pwa:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: finanzas-pwa
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - OLLAMA_VISION_MODEL=${OLLAMA_VISION_MODEL:-llava}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

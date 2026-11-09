@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum AccountType {
+  CASH
+  DEBIT
+  CREDIT
+  SAVINGS
+}
+
+enum CategoryType {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+enum DebtType {
+  I_OWE
+  THEY_OWE
+}
+
+enum DebtStatus {
+  ACTIVE
+  PAID
+}
+
+enum RecurrenceFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+model Account {
+  id             String          @id @default(cuid())
+  name           String
+  type           AccountType     @default(DEBIT)
+  balance        Float           @default(0.0)
+  creditLimit    Float?
+  cutoffDay      Int?
+  paymentDueDay  Int?
+  currency       String          @default("MXN")
+  color          String?         @default("#009fdb")
+  bankLogo       String?         @default("BBVA")
+  isArchived     Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  transactions   Transaction[]
+  recurringRules RecurringRule[]
+  debts          Debt[]
+}
+
+model Category {
+  id             String          @id @default(cuid())
+  name           String
+  type           CategoryType    @default(EXPENSE)
+  icon           String          @default("Tag")
+  color          String          @default("#009fdb")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  transactions   Transaction[]
+  recurringRules RecurringRule[]
+}
+
+model Transaction {
+  id                    String          @id @default(cuid())
+  amount                Float
+  type                  TransactionType
+  date                  DateTime        @default(now())
+  note                  String?
+  receiptUrl            String?
+  accountId             String
+  account               Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  destinationAccountId  String?
+  categoryId            String
+  category              Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  isRecurring           Boolean         @default(false)
+  installments          Int?
+  remainingInstallments Int?
+  monthlyAmount         Float?
+  isRetroactive         Boolean         @default(false)
+  debtId                String?
+  debt                  Debt?           @relation(fields: [debtId], references: [id], onDelete: SetNull)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@index([date])
+  @@index([accountId])
+  @@index([categoryId])
+  @@index([debtId])
+}
+
+model Debt {
+  id                    String        @id @default(cuid())
+  title                 String
+  counterparty          String?
+  type                  DebtType
+  totalAmount           Float
+  paidAmount            Float         @default(0.0)
+  dueDate               DateTime?
+  isMsi                 Boolean       @default(false)
+  installments          Int?
+  remainingInstallments Int?
+  monthlyPayment        Float?
+  accountId             String?
+  account               Account?      @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  notes                 String?
+  status                DebtStatus    @default(ACTIVE)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  transactions          Transaction[]
+}
+
+model RecurringRule {
+  id         String              @id @default(cuid())
+  amount     Float
+  type       TransactionType
+  frequency  RecurrenceFrequency @default(MONTHLY)
+  nextRun    DateTime
+  accountId  String
+  account    Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+}

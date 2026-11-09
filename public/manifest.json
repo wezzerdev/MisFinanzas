@@ -1,0 +1,17 @@
+{
+  "name": "Finanzas Personales PWA",
+  "short_name": "Finanzas",
+  "description": "PWA de Finanzas Personales con Supabase, Control de Tarjetas, MSI y Deudas",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
