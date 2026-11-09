@@ -1,16 +1,17 @@
-# Stage 1: Base setup con Node 20 y pnpm vía corepack
+# Stage 1: Base setup con Node 20 y pnpm v9 fijado vía corepack para evitar bloqueos
 FROM node:20-alpine AS base
 RUN apk add --no-cache libc6-compat openssl
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
+RUN corepack prepare pnpm@9.15.4 --activate
 WORKDIR /app
 
-# Stage 2: Instalación de dependencias con pnpm (copiando .npmrc para autorizar Prisma)
+# Stage 2: Instalación de dependencias con pnpm v9
 FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml* .npmrc* ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --unsafe-perm
 
 # Stage 3: Compilación de Next.js en modo Standalone con Prisma + Supabase
 FROM base AS builder
