@@ -63,12 +63,13 @@ export const FAB: React.FC<FABProps> = ({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             onClick={close}
-            className="fixed inset-0 bg-black/70 backdrop-blur-xs z-30"
+            className="fixed inset-0 bg-black/75 backdrop-blur-xs z-40"
           />
         )}
       </AnimatePresence>
 
-      <div className="fixed bottom-20 right-5 z-40 flex flex-col items-end pointer-events-none">
+      {/* Posicionamiento Seguro: Flotando perfectamente sobre la barra inferior con Safe-Area */}
+      <div className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] sm:bottom-24 right-5 z-40 flex flex-col items-end pointer-events-none">
         <AnimatePresence>
           {isOpen && (
             <div className="flex flex-col items-end gap-3 mb-3 pointer-events-auto">
@@ -87,12 +88,12 @@ export const FAB: React.FC<FABProps> = ({
                     className="flex items-center gap-3 cursor-pointer group"
                     onClick={item.action}
                   >
-                    <span className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#121212] text-slate-800 dark:text-neutral-100 text-xs font-semibold shadow-soft border border-slate-200 dark:border-[#262626] group-hover:scale-105 transition-transform">
+                    <span className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#121212] text-slate-800 dark:text-neutral-100 text-xs font-bold shadow-soft border border-slate-200 dark:border-[#262626] group-hover:scale-105 transition-transform select-none">
                       {item.label}
                     </span>
                     <button
                       type="button"
-                      className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg transition-transform active:scale-95 min-h-touch min-w-touch ${item.color}`}
+                      className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg transition-transform active:scale-95 ${item.color}`}
                       aria-label={item.label}
                     >
                       <IconComponent className="w-5 h-5 stroke-[2.2]" />
@@ -104,13 +105,13 @@ export const FAB: React.FC<FABProps> = ({
           )}
         </AnimatePresence>
 
-        {/* Master Floating Action Button: Corporate Blue #009fdb */}
+        {/* Master Floating Action Button: Corporate Blue #009fdb con elevación segura */}
         <motion.button
           type="button"
           onClick={toggleOpen}
           whileTap={{ scale: 0.92 }}
-          className="pointer-events-auto w-14 h-14 rounded-2xl bg-[#009fdb] hover:bg-[#0088bd] text-white border border-white/15 flex items-center justify-center shadow-2xl shadow-[#009fdb]/30 min-h-touch min-w-touch focus:outline-none transition-all"
-          aria-label={isOpen ? "Cerrar menú" : "Abrir menú de registro"}
+          className="pointer-events-auto w-14 h-14 rounded-2xl bg-[#009fdb] hover:bg-[#0088bd] text-white border border-white/20 flex items-center justify-center shadow-2xl shadow-[#009fdb]/40 focus:outline-none transition-all active:scale-95"
+          aria-label={isOpen ? "Cerrar menú de acciones" : "Abrir menú de registro"}
         >
           <motion.div
             animate={{ rotate: isOpen ? 45 : 0 }}
