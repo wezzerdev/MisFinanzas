@@ -6,11 +6,11 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 WORKDIR /app
 
-# Stage 2: Instalación de dependencias con pnpm
+# Stage 2: Instalación de dependencias con pnpm (Se agrega --unsafe-perm=true para permitir scripts de Prisma)
 FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install
+RUN pnpm install --unsafe-perm=true
 
 # Stage 3: Compilación de Next.js en modo Standalone con Prisma + Supabase
 FROM base AS builder
