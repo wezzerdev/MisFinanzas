@@ -80,49 +80,49 @@ export const AccountCard: React.FC<AccountCardProps> = ({
       <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-black/20 rounded-full blur-xl pointer-events-none" />
 
       {/* Header: Chip + Contactless + Type badge */}
-      <div className="flex items-center justify-between relative z-10">
-        <div className="flex items-center gap-2.5">
+      <div className="flex items-center justify-between relative z-10 w-full">
+        <div className="flex items-center gap-2.5 shrink-0">
           {/* Simulated EMV Gold Chip */}
           <div
-            className={`w-9 h-7 rounded-md ${theme.chip} shadow-inner flex items-center justify-center p-1 relative border border-amber-500/30`}
+            className={`w-8 h-6 rounded-md ${theme.chip} shadow-inner flex items-center justify-center p-1 relative border border-amber-500/30 shrink-0`}
           >
             <div className="w-full h-full border border-amber-700/30 rounded-xs flex flex-col justify-around">
               <div className="h-0.5 bg-amber-700/20 w-full" />
               <div className="h-0.5 bg-amber-700/20 w-full" />
             </div>
           </div>
-          <Wifi className="w-4 h-4 text-white/70 rotate-90" />
+          <Wifi className="w-3.5 h-3.5 text-white/70 rotate-90 shrink-0" />
         </div>
 
         <span
-          className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full backdrop-blur-md ${theme.tagBg}`}
+          className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full backdrop-blur-md shrink-0 flex items-center ${theme.tagBg}`}
         >
           {theme.label}
         </span>
       </div>
 
       {/* Middle: Masked Number & Account Title */}
-      <div className="relative z-10 flex flex-col gap-0.5">
-        <span className="text-xs font-semibold text-white/90 tracking-wide truncate">
+      <div className="relative z-10 flex flex-col gap-1 w-full overflow-hidden">
+        <span className="text-xs font-semibold text-white/90 tracking-wide truncate block w-full">
           {name}
         </span>
-        <span className="text-[11px] font-mono tracking-widest text-white/50">
+        <span className="text-[11px] font-mono tracking-widest text-white/50 shrink-0">
           •••• •••• •••• {lastFour}
         </span>
       </div>
 
       {/* Bottom: Balance & Currency */}
-      <div className="relative z-10 flex items-end justify-between border-t border-white/10 pt-2">
-        <div className="flex flex-col">
-          <span className="text-[10px] uppercase tracking-wider text-white/60 font-medium">
+      <div className="relative z-10 flex items-center justify-between border-t border-white/10 pt-2.5 w-full">
+        <div className="flex flex-col min-w-0 flex-1">
+          <span className="text-[10px] uppercase tracking-wider text-white/60 font-medium truncate">
             Saldo Disponible
           </span>
-          <span className="text-xl sm:text-2xl font-black tracking-tight text-white drop-shadow-xs">
+          <span className="text-xl sm:text-2xl font-black tracking-tight text-white drop-shadow-xs truncate">
             {formatCurrency(balance, currency)}
           </span>
         </div>
 
-        <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/80">
+        <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/80 shrink-0 ml-2">
           <IconComponent className="w-4 h-4" />
         </div>
       </div>

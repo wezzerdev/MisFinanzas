@@ -99,7 +99,7 @@ export const AccountsGrid: React.FC<AccountsGridProps> = ({
                       e.stopPropagation();
                       onOpenSettings(acc);
                     }}
-                    className="w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 text-amber-200/80 hover:text-white flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 active:scale-95 text-amber-200/80 hover:text-white flex items-center justify-center transition-all shrink-0"
                     aria-label="Configurar cuenta"
                   >
                     <Settings2 className="w-4 h-4" />
@@ -107,31 +107,31 @@ export const AccountsGrid: React.FC<AccountsGridProps> = ({
                 </div>
 
                 <div
-                  className="relative z-10 flex flex-col gap-0.5"
+                  className="relative z-10 flex flex-col gap-1 w-full overflow-hidden"
                   onClick={() => onSelectAccount && onSelectAccount(acc)}
                 >
-                  <span className="text-xs font-semibold text-amber-100/95 tracking-wide truncate">
+                  <span className="text-xs font-semibold text-amber-100/95 tracking-wide truncate block w-full">
                     {acc.name}
                   </span>
-                  <span className="text-[11px] font-mono tracking-widest text-amber-300/40 uppercase">
+                  <span className="text-[11px] font-mono tracking-widest text-amber-300/50 uppercase">
                     Cartera Física
                   </span>
                 </div>
 
                 <div
-                  className="relative z-10 flex items-end justify-between border-t border-amber-700/30 pt-2"
+                  className="relative z-10 flex items-center justify-between border-t border-amber-700/30 pt-2.5 w-full"
                   onClick={() => onSelectAccount && onSelectAccount(acc)}
                 >
-                  <div className="flex flex-col">
-                    <span className="text-[10px] uppercase tracking-wider text-amber-300/60 font-medium">
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="text-[10px] uppercase tracking-wider text-amber-300/60 font-medium truncate">
                       Disponible
                     </span>
-                    <span className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                    <span className="text-xl sm:text-2xl font-black tracking-tight text-white truncate">
                       {formatCurrency(acc.balance, acc.currency)}
                     </span>
                   </div>
 
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0 ml-2">
                     Billetes
                   </span>
                 </div>
@@ -179,21 +179,21 @@ export const AccountsGrid: React.FC<AccountsGridProps> = ({
               />
 
               {/* Header: Bank Badge + Chip + Wifi + Settings */}
-              <div className="flex items-center justify-between relative z-10">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between relative z-10 w-full">
+                <div className="flex items-center gap-2 shrink-0">
                   <StylizedBankLogo bankId={acc.bankLogo || "BBVA"} size="sm" />
-                  <div className="w-8 h-6 rounded-md bg-gradient-to-tr from-amber-200 to-amber-400 shadow-inner flex items-center justify-center p-1 relative border border-amber-500/30">
+                  <div className="w-8 h-6 rounded-md bg-gradient-to-tr from-amber-200 to-amber-400 shadow-inner flex items-center justify-center p-1 relative border border-amber-500/30 shrink-0">
                     <div className="w-full h-full border border-amber-700/30 rounded-xs flex flex-col justify-around">
                       <div className="h-0.5 bg-amber-700/20 w-full" />
                       <div className="h-0.5 bg-amber-700/20 w-full" />
                     </div>
                   </div>
-                  <Wifi className="w-3.5 h-3.5 text-white/70 rotate-90" />
+                  <Wifi className="w-3.5 h-3.5 text-white/70 rotate-90 shrink-0" />
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <span
-                    className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full backdrop-blur-md ${tagBg}`}
+                    className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full backdrop-blur-md shrink-0 flex items-center ${tagBg}`}
                   >
                     {label}
                   </span>
@@ -203,28 +203,28 @@ export const AccountsGrid: React.FC<AccountsGridProps> = ({
                       e.stopPropagation();
                       onOpenSettings(acc);
                     }}
-                    className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white/80 hover:text-white flex items-center justify-center transition-all shrink-0"
                     aria-label="Configurar cuenta"
                   >
-                    <Settings2 className="w-3.5 h-3.5" />
+                    <Settings2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
               {/* Middle: Account Title & Masked Card */}
               <div
-                className="relative z-10 flex flex-col gap-0.5"
+                className="relative z-10 flex flex-col gap-1 w-full overflow-hidden"
                 onClick={() => onSelectAccount && onSelectAccount(acc)}
               >
-                <span className="text-xs font-semibold text-white/95 tracking-wide truncate">
+                <span className="text-xs font-semibold text-white/95 tracking-wide truncate block w-full">
                   {acc.name}
                 </span>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-mono tracking-widest text-white/50">
+                <div className="flex items-center justify-between gap-2 w-full">
+                  <span className="text-[11px] font-mono tracking-widest text-white/50 shrink-0">
                     •••• •••• •••• {lastFour}
                   </span>
                   {acc.type === "CREDIT" && (acc.cutoffDay || acc.paymentDueDay) && (
-                    <span className="text-[10px] font-semibold text-[#009fdb] bg-[#153D64]/50 border border-[#009fdb]/30 px-1.5 py-0.5 rounded-md">
+                    <span className="text-[10px] font-semibold text-[#009fdb] bg-[#153D64]/50 border border-[#009fdb]/30 px-2 py-0.5 rounded-md truncate max-w-[130px] shrink-0">
                       {acc.cutoffDay ? `Corte ${acc.cutoffDay}` : ""}
                       {acc.cutoffDay && acc.paymentDueDay ? " · " : ""}
                       {acc.paymentDueDay ? `Pago ${acc.paymentDueDay}` : ""}
@@ -235,21 +235,21 @@ export const AccountsGrid: React.FC<AccountsGridProps> = ({
 
               {/* Bottom: Balance */}
               <div
-                className="relative z-10 flex items-end justify-between border-t border-white/10 pt-2"
+                className="relative z-10 flex items-center justify-between border-t border-white/10 pt-2.5 w-full"
                 onClick={() => onSelectAccount && onSelectAccount(acc)}
               >
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase tracking-wider text-white/60 font-medium">
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-[10px] uppercase tracking-wider text-white/60 font-medium truncate">
                     {acc.type === "CREDIT" && acc.creditLimit && acc.creditLimit > 0
                       ? `Saldo · Límite ${formatCurrency(acc.creditLimit, acc.currency)}`
                       : "Saldo"}
                   </span>
-                  <span className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                  <span className="text-xl sm:text-2xl font-black tracking-tight text-white truncate">
                     {formatCurrency(acc.balance, acc.currency)}
                   </span>
                 </div>
 
-                <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/80">
+                <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/80 shrink-0 ml-2">
                   <IconComponent className="w-4 h-4" />
                 </div>
               </div>
@@ -261,12 +261,23 @@ export const AccountsGrid: React.FC<AccountsGridProps> = ({
         <button
           type="button"
           onClick={onAddNewAccount}
-          className="w-40 sm:w-48 h-44 rounded-3xl border-2 border-dashed border-slate-200 dark:border-[#262626] hover:border-[#009fdb] flex flex-col items-center justify-center gap-2 text-neutral-400 hover:text-[#009fdb] transition-colors shrink-0 snap-center bg-white/40 dark:bg-[#121212]"
+          className={`${
+            accounts.length === 0 ? "w-72 sm:w-80" : "w-40 sm:w-48"
+          } h-44 rounded-3xl border-2 border-dashed border-slate-300 dark:border-[#262626] hover:border-[#009fdb] active:scale-[0.98] flex flex-col items-center justify-center gap-2.5 text-neutral-400 hover:text-[#009fdb] transition-all shrink-0 snap-center bg-white/40 dark:bg-[#121212] group`}
         >
-          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-[#181818] flex items-center justify-center">
-            <Plus className="w-5 h-5" />
+          <div className="w-11 h-11 rounded-2xl bg-slate-100 dark:bg-[#181818] border border-slate-200 dark:border-[#262626] group-hover:border-[#009fdb]/40 flex items-center justify-center text-neutral-400 group-hover:text-[#009fdb] transition-colors">
+            <Plus className="w-5 h-5 stroke-[2.4]" />
           </div>
-          <span className="text-xs font-semibold">Nueva Cuenta</span>
+          <div className="flex flex-col items-center">
+            <span className="text-xs font-bold text-slate-800 dark:text-neutral-200 group-hover:text-[#009fdb]">
+              Nueva Cuenta
+            </span>
+            {accounts.length === 0 && (
+              <span className="text-[10px] text-neutral-500 font-medium mt-0.5">
+                Registra tu tarjeta o efectivo
+              </span>
+            )}
+          </div>
         </button>
       </div>
     </div>

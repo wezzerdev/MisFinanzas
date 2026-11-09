@@ -178,7 +178,7 @@ export const StylizedBankLogo: React.FC<{
   size?: "sm" | "md";
 }> = ({ bankId = "BBVA", size = "md" }) => {
   const normalized = (bankId || "BBVA").toUpperCase();
-  const dim = size === "sm" ? "w-7 h-7 text-[9px]" : "w-9 h-9 text-[10px]";
+  const dim = size === "sm" ? "w-8 h-8 text-[10px]" : "w-10 h-10 text-[11px]";
 
   switch (normalized) {
     case "BBVA":
@@ -824,16 +824,16 @@ export const AccountForm: React.FC<AccountFormProps> = ({
         </div>
       )}
 
-      {/* BOTONES DE ACCIÓN */}
-      <div className="flex items-center gap-3 pt-1">
+      {/* BOTONES DE ACCIÓN ESTANDARIZADOS (h-12 / 48px touch-target en iOS) */}
+      <div className="flex items-center gap-3 pt-3 pb-safe">
         {isEditing && onArchive && (
           <button
             type="button"
             onClick={onArchive}
             disabled={saving}
-            className="py-3 px-3.5 rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 transition-colors flex items-center gap-1.5 min-h-[48px]"
+            className="h-12 min-h-[48px] max-h-[48px] px-4 rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-950/50 transition-colors flex items-center justify-center gap-1.5 active:scale-[0.98] shrink-0"
           >
-            <Archive className="w-4 h-4" />
+            <Archive className="w-4 h-4 shrink-0" />
             <span>Archivar</span>
           </button>
         )}
@@ -843,7 +843,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({
             type="button"
             onClick={onCancel}
             disabled={saving}
-            className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#121212] text-xs font-bold text-slate-400 min-h-[48px]"
+            className="flex-1 h-12 min-h-[48px] max-h-[48px] rounded-xl border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#121212] text-xs font-bold text-slate-600 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-[#181818] transition-colors flex items-center justify-center active:scale-[0.98]"
           >
             Cancelar
           </button>
@@ -852,13 +852,13 @@ export const AccountForm: React.FC<AccountFormProps> = ({
         <button
           type="submit"
           disabled={saving}
-          className="flex-1 py-3 px-5 rounded-xl bg-[#009fdb] hover:bg-[#0088bd] text-white font-bold text-xs shadow-md shadow-[#009fdb]/20 flex items-center justify-center gap-2 transition-all min-h-[48px]"
+          className="flex-1 h-12 min-h-[48px] max-h-[48px] px-5 rounded-xl bg-[#009fdb] hover:bg-[#0088bd] text-white font-bold text-xs shadow-md shadow-[#009fdb]/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
         >
           {saving ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-4 h-4 animate-spin shrink-0" />
           ) : (
             <>
-              <Check className="w-4 h-4 stroke-[2.5]" />
+              <Check className="w-4 h-4 stroke-[2.5] shrink-0" />
               <span>{isEditing ? "Guardar Cambios" : "Crear Cuenta"}</span>
             </>
           )}

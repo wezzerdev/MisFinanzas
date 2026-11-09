@@ -35,26 +35,42 @@
     appearance: textfield;
   }
 
-  /* Standardize date input across iOS and Android browsers */
-  input[type="date"] {
+  /* Standardize date input across iOS and Android browsers without zoom jumps */
+  input[type="date"],
+  input[type="datetime-local"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    box-sizing: border-box;
     min-height: 48px;
     height: 48px;
-    line-height: 1.25rem;
+    max-height: 48px;
+    font-size: 16px; /* Crucial: 16px prevents iOS Safari from auto-zooming and jumping the layout */
   }
 
-  input[type="date"]::-webkit-date-and-time-value {
+  /* Prevent iOS Safari from ballooning height via internal shadow DOM */
+  input[type="date"]::-webkit-date-and-time-value,
+  input[type="datetime-local"]::-webkit-date-and-time-value {
     text-align: left;
     margin: 0;
+    padding: 0;
+    min-height: 0;
+    height: 46px;
+    line-height: 46px;
+    display: flex;
+    align-items: center;
   }
 
-  input[type="date"]::-webkit-calendar-picker-indicator {
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     cursor: pointer;
     opacity: 0.6;
     padding: 0;
-    margin-left: 0.5rem;
+    margin-left: auto;
   }
 
-  .dark input[type="date"]::-webkit-calendar-picker-indicator {
+  .dark input[type="date"]::-webkit-calendar-picker-indicator,
+  .dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     filter: invert(0.85);
   }
 }
@@ -102,23 +118,10 @@ body {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-}
 
-/* Minimalist neutral scrollbars */
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(163, 163, 163, 0.2);
-  border-radius: 9999px;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(64, 64, 64, 0.7);
+  /* Standardized touch-friendly buttons */
+  .touch-target-min {
+    min-height: 48px;
+    min-width: 44px;
+  }
 }

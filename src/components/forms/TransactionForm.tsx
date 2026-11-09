@@ -680,7 +680,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   <button
                     type="button"
                     onClick={handleCreateAccount}
-                    className="bg-[#009fdb] hover:bg-[#0088bd] text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all min-h-[48px]"
+                    className="h-12 min-h-[48px] px-5 rounded-xl bg-[#009fdb] hover:bg-[#0088bd] text-white text-xs font-bold transition-all flex items-center justify-center shrink-0 active:scale-[0.98]"
                   >
                     Crear
                   </button>
@@ -772,7 +772,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                 }
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-[#121212] border border-slate-200 dark:border-[#262626] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-neutral-100 focus:outline-none focus:border-[#009fdb] min-h-[48px] h-[48px]"
+                className="w-full h-12 min-h-[48px] max-h-[48px] bg-slate-50 dark:bg-[#121212] border border-slate-200 dark:border-[#262626] rounded-xl px-4 text-[16px] sm:text-sm text-slate-900 dark:text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-[#009fdb] focus:ring-1 focus:ring-[#009fdb] transition-colors"
               />
             </div>
 
@@ -785,7 +785,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-[#121212] border border-slate-200 dark:border-[#262626] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-neutral-100 focus:outline-none focus:border-[#009fdb] min-h-[48px] h-[48px]"
+                className="w-full h-12 min-h-[48px] max-h-[48px] bg-slate-50 dark:bg-[#121212] border border-slate-200 dark:border-[#262626] rounded-xl px-4 text-[16px] sm:text-sm text-slate-900 dark:text-neutral-100 focus:outline-none focus:border-[#009fdb] focus:ring-1 focus:ring-[#009fdb] transition-colors appearance-none [-webkit-appearance:none] leading-[48px] py-0 [&::-webkit-date-and-time-value]:m-0 [&::-webkit-date-and-time-value]:p-0 [&::-webkit-date-and-time-value]:leading-[48px] [&::-webkit-date-and-time-value]:text-left [color-scheme:dark]"
               />
             </div>
           </div>
@@ -1080,7 +1080,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   </div>
 
                   {/* Fecha Límite de Pago / Vencimiento */}
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-semibold text-slate-500 dark:text-neutral-400 flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5 text-[#009fdb]" />
                       <span>Fecha Límite / Vencimiento (Opcional)</span>
@@ -1089,7 +1089,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                       type="date"
                       value={debtDueDate}
                       onChange={(e) => setDebtDueDate(e.target.value)}
-                      className="w-full bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#262626] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[#009fdb] min-h-[48px] h-[48px]"
+                      className="w-full h-12 min-h-[48px] max-h-[48px] bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#262626] rounded-xl px-4 text-[16px] sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[#009fdb] focus:ring-1 focus:ring-[#009fdb] transition-colors appearance-none [-webkit-appearance:none] leading-[48px] py-0 [&::-webkit-date-and-time-value]:m-0 [&::-webkit-date-and-time-value]:p-0 [&::-webkit-date-and-time-value]:leading-[48px] [&::-webkit-date-and-time-value]:text-left [color-scheme:dark]"
                     />
                   </div>
 
@@ -1210,13 +1210,13 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           </div>
         )}
 
-        {/* Botones de Acción */}
-        <div className="flex items-center gap-3 pt-2 pb-safe">
+        {/* Botones de Acción Estandarizados (h-12 / 48px touch-target en iOS) */}
+        <div className="flex items-center gap-3 pt-3 pb-safe">
           <button
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#181818] text-xs font-bold text-slate-600 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-colors min-h-[48px]"
+            className="flex-1 h-12 min-h-[48px] max-h-[48px] rounded-xl border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#181818] text-xs font-bold text-slate-600 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-[#222222] transition-colors flex items-center justify-center select-none active:scale-[0.98]"
           >
             Cancelar
           </button>
@@ -1224,16 +1224,16 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           <button
             type="submit"
             disabled={loading || fetchingMetadata}
-            className="flex-2 py-3 px-5 rounded-xl bg-[#009fdb] hover:bg-[#0088bd] text-white font-bold text-xs shadow-md shadow-black/40 flex items-center justify-center gap-2 transition-all min-h-[48px] disabled:opacity-50"
+            className="flex-2 h-12 min-h-[48px] max-h-[48px] px-6 rounded-xl bg-[#009fdb] hover:bg-[#0088bd] text-white font-bold text-xs shadow-md shadow-[#009fdb]/20 flex items-center justify-center gap-2 transition-all disabled:opacity-50 select-none active:scale-[0.98]"
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
                 <span>Guardando...</span>
               </>
             ) : (
               <>
-                <Check className="w-4 h-4 stroke-[2.5]" />
+                <Check className="w-4 h-4 stroke-[2.5] shrink-0" />
                 <span>Guardar</span>
               </>
             )}
