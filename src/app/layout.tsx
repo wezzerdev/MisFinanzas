@@ -4,7 +4,7 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "Finanzas PWA | Fintech Mobile",
-  description: "PWA Local-First de Finanzas Personales con SQLite, OCR y Asesor IA Ollama.",
+  description: "PWA Local-First de Finanzas Personales con Supabase, OCR y Asesor IA Ollama.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -33,6 +33,15 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark" suppressHydrationWarning>
       <head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+        />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function() {

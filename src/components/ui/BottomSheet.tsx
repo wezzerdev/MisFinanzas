@@ -106,7 +106,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             )}
 
             {/* Scrollable Content */}
-            <div className="p-5 sm:p-6 overflow-y-auto overscroll-contain flex-1 touch-auto text-slate-800 dark:text-neutral-200">
+            <div className="p-5 sm:p-6 overflow-y-auto overscroll-contain flex-1 touch-auto text-slate-800 dark:text-neutral-200 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
               {children}
             </div>
           </motion.div>

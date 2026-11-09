@@ -13,7 +13,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = () => {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className="sticky top-0 z-30 w-full backdrop-blur-xl bg-white/90 dark:bg-[#0a0a0a]/90 border-b border-slate-200 dark:border-[#262626] px-5 py-3.5 transition-colors">
+    <header className="sticky top-0 z-30 w-full backdrop-blur-xl bg-white/90 dark:bg-[#0a0a0a]/90 border-b border-slate-200 dark:border-[#262626] px-5 pt-[max(0.875rem,env(safe-area-inset-top))] pb-3.5 transition-colors">
       <div className="max-w-3xl mx-auto flex items-center justify-between">
         {/* User profile & Brand */}
         <div className="flex items-center gap-3">

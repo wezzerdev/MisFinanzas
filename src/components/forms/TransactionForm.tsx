@@ -772,7 +772,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                 }
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-[#121212] border border-slate-200 dark:border-[#262626] rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-neutral-100 focus:outline-none focus:border-[#009fdb] min-h-[48px]"
+                className="w-full bg-slate-50 dark:bg-[#121212] border border-slate-200 dark:border-[#262626] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-neutral-100 focus:outline-none focus:border-[#009fdb] min-h-[48px] h-[48px]"
               />
             </div>
 
@@ -785,7 +785,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-[#121212] border border-slate-200 dark:border-[#262626] rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-neutral-100 focus:outline-none focus:border-[#009fdb] min-h-[48px]"
+                className="w-full bg-slate-50 dark:bg-[#121212] border border-slate-200 dark:border-[#262626] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-neutral-100 focus:outline-none focus:border-[#009fdb] min-h-[48px] h-[48px]"
               />
             </div>
           </div>
@@ -1089,7 +1089,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                       type="date"
                       value={debtDueDate}
                       onChange={(e) => setDebtDueDate(e.target.value)}
-                      className="w-full bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#262626] rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[#009fdb] min-h-[46px]"
+                      className="w-full bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#262626] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[#009fdb] min-h-[48px] h-[48px]"
                     />
                   </div>
 
@@ -1211,7 +1211,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         )}
 
         {/* Botones de Acción */}
-        <div className="flex items-center gap-3 pt-1">
+        <div className="flex items-center gap-3 pt-2 pb-safe">
           <button
             type="button"
             onClick={onCancel}

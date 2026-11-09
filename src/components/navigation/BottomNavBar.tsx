@@ -39,7 +39,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-slate-200 dark:border-[#262626] px-2 sm:px-4 py-1.5 transition-colors">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-slate-200 dark:border-[#262626] px-2 sm:px-4 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] transition-colors">
       <div className="max-w-md mx-auto grid grid-cols-4 gap-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;
