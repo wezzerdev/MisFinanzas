@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findUserByEmail, setPasswordResetToken, generateToken } from "@/lib/user-store";
 import { getBaseAppUrl, generatePasswordResetEmailHtml } from "@/lib/email-templates";
+import { sendEmail } from "@/lib/mailer";
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,12 +39,23 @@ export async function POST(req: NextRequest) {
       expiresHours: 2,
     });
 
-    console.log(`[AUTH] Enlace de recuperación de contraseña para ${cleanEmail}: ${resetUrl}`);
+    const mailResult = await sendEmail({
+      to: cleanEmail,
+      subject: "Restablecer Contraseña | Bóveda Finanzas",
+      html: emailHtml,
+      text: `Restablece tu contraseña haciendo clic aquí: ${resetUrl}`,
+    });
+
+    console.log(`[AUTH] Enlace de recuperación de contraseña para ${cleanEmail}: ${resetUrl} (Mail enviado: ${mailResult.success})`);
 
     return NextResponse.json({
       success: true,
-      message: "Si la dirección coincide con una cuenta activa, recibirás un enlace para restablecer tu contraseña.",
-      resetUrl: process.env.NODE_ENV !== "production" ? resetUrl : undefined,
+      message: mailResult.success
+        ? "Hemos enviado las instrucciones para restablecer tu contraseña a tu correo."
+        : "Instrucciones de recuperación generadas. Si no recibes el correo, puedes restablecer directamente con el enlace alternativo.",
+      resetUrl,
+      emailSent: mailResult.success,
+      smtpConfigured: mailResult.configured,
     });
   } catch (error: any) {
     console.error("API /api/auth/forgot-password error:", error);

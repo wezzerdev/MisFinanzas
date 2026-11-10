@@ -10,6 +10,7 @@ import {
   getBaseAppUrl,
   generateVerificationEmailHtml,
 } from "@/lib/email-templates";
+import { sendEmail } from "@/lib/mailer";
 
 export async function POST(req: NextRequest) {
   try {
@@ -57,13 +58,24 @@ export async function POST(req: NextRequest) {
         expiresHours: 24,
       });
 
-      // Registro en logs del servidor para auditoría
-      console.log(`[AUTH] Enlace de verificación reenviado a ${cleanEmail}: ${verificationUrl}`);
+      // Despacho de correo electrónico
+      const mailResult = await sendEmail({
+        to: cleanEmail,
+        subject: "Verifica tu cuenta | Bóveda Finanzas",
+        html: emailHtml,
+        text: `Verifica tu cuenta haciendo clic en: ${verificationUrl}`,
+      });
+
+      console.log(`[AUTH] Enlace de verificación reenviado a ${cleanEmail}: ${verificationUrl} (Despacho: ${mailResult.success ? "Enviado por correo" : "Sin SMTP"})`);
 
       return NextResponse.json({
         success: true,
-        message: `Hemos enviado un nuevo enlace de verificación a ${cleanEmail}. Por favor revisa tu bandeja de entrada o spam.`,
-        verificationUrl: process.env.NODE_ENV !== "production" ? verificationUrl : undefined,
+        message: mailResult.success
+          ? `Hemos enviado un nuevo enlace de verificación a ${cleanEmail}. Por favor revisa tu bandeja de entrada o carpeta de spam.`
+          : `Enlace de verificación generado para ${cleanEmail}. Puedes activarla directamente a continuación o configurar SMTP en Dokploy.`,
+        verificationUrl,
+        emailSent: mailResult.success,
+        smtpConfigured: mailResult.configured,
       });
     }
 
@@ -82,12 +94,18 @@ export async function POST(req: NextRequest) {
       const existingUser = await findUserByEmail(cleanEmail);
       if (existingUser) {
         if (!existingUser.emailVerified) {
+          const baseUrl = getBaseAppUrl(req);
+          const verificationUrl = existingUser.verificationToken
+            ? `${baseUrl}/verify?token=${existingUser.verificationToken}`
+            : `${baseUrl}/verify?token=${generateToken()}`;
+
           return NextResponse.json(
             {
               success: false,
               requiresVerification: true,
-              error: "Ya existe una cuenta con este correo pero aún no ha sido verificada. Revisa tu correo o solicita un nuevo enlace.",
+              error: "Ya existe una cuenta con este correo pero aún no ha sido verificada. Puedes activarla directamente o solicitar un reenvío.",
               email: cleanEmail,
+              verificationUrl,
             },
             { status: 409 }
           );
@@ -117,15 +135,26 @@ export async function POST(req: NextRequest) {
         expiresHours: 24,
       });
 
-      console.log(`[AUTH] Correo de verificación generado para ${cleanEmail}: ${verificationUrl}`);
+      // Intentar enviar el correo mediante SMTP o Resend
+      const mailResult = await sendEmail({
+        to: cleanEmail,
+        subject: "Confirma tu cuenta | Bóveda Finanzas Personales",
+        html: emailHtml,
+        text: `Confirma tu cuenta de Bóveda Finanzas haciendo clic aquí: ${verificationUrl}`,
+      });
 
-      // NO se genera sesión activa aquí: El usuario DEBE verificar su correo primero
+      console.log(`[AUTH] Registro completado para ${cleanEmail}. Token generado. Enlace: ${verificationUrl} (Email enviado: ${mailResult.success})`);
+
       return NextResponse.json({
         success: true,
         requiresVerification: true,
-        message: `Bóveda creada exitosamente. Hemos enviado un correo de confirmación a ${cleanEmail}. Por favor verifica tu bandeja de entrada antes de acceder.`,
+        message: mailResult.success
+          ? `Bóveda creada exitosamente. Hemos enviado un correo de confirmación a ${cleanEmail}. Por favor verifica tu bandeja de entrada o spam.`
+          : `Bóveda creada exitosamente para ${cleanEmail}. Puedes verificarla al instante con el botón de activación rápida a continuación.`,
         email: cleanEmail,
-        verificationUrl: process.env.NODE_ENV !== "production" ? verificationUrl : undefined,
+        verificationUrl,
+        emailSent: mailResult.success,
+        smtpConfigured: mailResult.configured,
       });
     }
 
@@ -153,12 +182,18 @@ export async function POST(req: NextRequest) {
 
       // BLOQUEO CRÍTICO DE SEGURIDAD: Correo no verificado
       if (!user.emailVerified) {
+        const baseUrl = getBaseAppUrl(req);
+        const verificationUrl = user.verificationToken
+          ? `${baseUrl}/verify?token=${user.verificationToken}`
+          : `${baseUrl}/verify?token=${generateToken()}`;
+
         return NextResponse.json(
           {
             success: false,
             requiresVerification: true,
-            error: "Debes confirmar tu correo electrónico antes de ingresar a la bóveda. Por favor revisa tu bandeja de entrada o solicita un nuevo enlace de confirmación.",
+            error: "Debes confirmar tu correo electrónico antes de ingresar a la bóveda. Puedes activarla directamente o solicitar un reenvío.",
             email: cleanEmail,
+            verificationUrl,
           },
           { status: 403 }
         );

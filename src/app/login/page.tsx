@@ -20,6 +20,9 @@ import {
   CheckCircle2,
   KeyRound,
   RotateCcw,
+  Sparkles,
+  ExternalLink,
+  HelpCircle,
 } from "lucide-react";
 
 function LoginContent() {
@@ -43,6 +46,8 @@ function LoginContent() {
   const [verificationPending, setVerificationPending] = useState<{
     email: string;
     message: string;
+    verificationUrl?: string;
+    smtpConfigured?: boolean;
   } | null>(null);
   const [resendingEmail, setResendingEmail] = useState(false);
   const [resendSuccess, setResendSuccess] = useState<string | null>(null);
@@ -52,6 +57,7 @@ function LoginContent() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotSuccess, setForgotSuccess] = useState<string | null>(null);
+  const [forgotResetUrl, setForgotResetUrl] = useState<string | null>(null);
   const [forgotError, setForgotError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,6 +111,8 @@ function LoginContent() {
             data.message ||
             data.error ||
             "Debes confirmar tu correo electrónico antes de ingresar a la bóveda.",
+          verificationUrl: data.verificationUrl,
+          smtpConfigured: data.smtpConfigured,
         });
         return;
       }
@@ -147,7 +155,18 @@ function LoginContent() {
         throw new Error(data.error || "Error al reenviar el correo.");
       }
 
-      setResendSuccess(data.message || "Enlace enviado exitosamente. Revisa tu bandeja de entrada o spam.");
+      setResendSuccess(data.message || "Enlace generado exitosamente.");
+      if (data.verificationUrl) {
+        setVerificationPending((prev) =>
+          prev
+            ? {
+                ...prev,
+                verificationUrl: data.verificationUrl,
+                smtpConfigured: data.smtpConfigured,
+              }
+            : null
+        );
+      }
     } catch (err: any) {
       setErrorMsg(err.message || "No se pudo reenviar el enlace.");
     } finally {
@@ -165,6 +184,7 @@ function LoginContent() {
     setForgotLoading(true);
     setForgotError(null);
     setForgotSuccess(null);
+    setForgotResetUrl(null);
 
     try {
       const res = await fetch("/api/auth/forgot-password", {
@@ -182,6 +202,9 @@ function LoginContent() {
         data.message ||
           "Si tu correo está registrado, recibirás un enlace seguro para restablecer tu contraseña."
       );
+      if (data.resetUrl) {
+        setForgotResetUrl(data.resetUrl);
+      }
     } catch (err: any) {
       setForgotError(err.message || "Error al procesar la solicitud.");
     } finally {
@@ -262,6 +285,28 @@ function LoginContent() {
                 </div>
               </div>
 
+              {/* Tarjeta de Activación Inmediata con 1 Clic */}
+              {verificationPending.verificationUrl && (
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-950/60 via-teal-950/40 to-[#121212] border border-emerald-500/40 text-left flex flex-col gap-3 shadow-lg shadow-emerald-950/30">
+                  <div className="flex items-center gap-2 text-emerald-400">
+                    <Sparkles className="w-4 h-4 shrink-0 animate-pulse" />
+                    <span className="font-bold text-xs uppercase tracking-wider">
+                      Activación Inmediata de Bóveda
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Si tu servidor en Dokploy aún no tiene configurado el correo SMTP o hay demora en tu bandeja de Gmail, puedes ingresar a tu cuenta inmediatamente con este botón:
+                  </p>
+                  <a
+                    href={verificationPending.verificationUrl}
+                    className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-900/30 active:scale-[0.98]"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Activar mi Bóveda y Entrar Ahora</span>
+                  </a>
+                </div>
+              )}
+
               {resendSuccess && (
                 <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2 text-left">
                   <Check className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -269,17 +314,17 @@ function LoginContent() {
                 </div>
               )}
 
-              <div className="flex flex-col gap-2 pt-2">
+              <div className="flex flex-col gap-2 pt-1">
                 <button
                   type="button"
                   onClick={handleResendVerification}
                   disabled={resendingEmail}
-                  className="w-full h-12 rounded-xl bg-[#009fdb] hover:bg-[#0088bd] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98] disabled:opacity-50"
+                  className="w-full h-11 rounded-xl bg-[#009fdb] hover:bg-[#0088bd] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98] disabled:opacity-50"
                 >
                   {resendingEmail ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Reenviando correo...</span>
+                      <span>Generando nuevo enlace...</span>
                     </>
                   ) : (
                     <>
@@ -541,12 +586,21 @@ function LoginContent() {
                   <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30 text-emerald-300 text-xs">
                     {forgotSuccess}
                   </div>
+                  {forgotResetUrl && (
+                    <a
+                      href={forgotResetUrl}
+                      className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98]"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>Restablecer Contraseña Ahora Mismo</span>
+                    </a>
+                  )}
                   <button
                     type="button"
                     onClick={() => setIsForgotModalOpen(false)}
-                    className="w-full h-11 rounded-xl bg-[#009fdb] text-white font-bold text-xs"
+                    className="w-full h-11 rounded-xl bg-[#262626] hover:bg-[#333] text-white font-bold text-xs"
                   >
-                    Entendido
+                    Cerrar
                   </button>
                 </div>
               ) : (
