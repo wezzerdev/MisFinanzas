@@ -3,14 +3,8 @@ import {
   findUserByEmail,
   createUser,
   verifyPassword,
-  generateToken,
-  updateVerificationToken,
+  autoConfirmUser,
 } from "@/lib/user-store";
-import {
-  getBaseAppUrl,
-  generateVerificationEmailHtml,
-} from "@/lib/email-templates";
-import { sendEmail } from "@/lib/mailer";
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,9 +21,9 @@ export async function POST(req: NextRequest) {
     const cleanEmail = email.trim().toLowerCase();
 
     // =========================================================================
-    // ACCIÓN 1: REENVIAR CORREO DE VERIFICACIÓN
+    // ACCIÓN 1: CONFIRMAR / REENVIAR (CONFIRMACIÓN INMEDIATA)
     // =========================================================================
-    if (action === "resend") {
+    if (action === "resend" || action === "confirm") {
       const existingUser = await findUserByEmail(cleanEmail);
       if (!existingUser) {
         return NextResponse.json(
@@ -38,44 +32,12 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      if (existingUser.emailVerified) {
-        return NextResponse.json({
-          success: true,
-          message: "Esta cuenta ya se encuentra verificada. Ya puedes iniciar sesión.",
-          alreadyVerified: true,
-        });
-      }
-
-      const newToken = generateToken();
-      await updateVerificationToken(cleanEmail, newToken);
-
-      const baseUrl = getBaseAppUrl(req);
-      const verificationUrl = `${baseUrl}/verify?token=${newToken}`;
-      const emailHtml = generateVerificationEmailHtml({
-        name: existingUser.name || cleanEmail.split("@")[0],
-        email: cleanEmail,
-        verificationUrl,
-        expiresHours: 24,
-      });
-
-      // Despacho de correo electrónico
-      const mailResult = await sendEmail({
-        to: cleanEmail,
-        subject: "Verifica tu cuenta | Bóveda Finanzas",
-        html: emailHtml,
-        text: `Verifica tu cuenta haciendo clic en: ${verificationUrl}`,
-      });
-
-      console.log(`[AUTH] Enlace de verificación reenviado a ${cleanEmail}: ${verificationUrl} (Despacho: ${mailResult.success ? "Enviado por correo" : "Sin SMTP"})`);
+      await autoConfirmUser(cleanEmail);
 
       return NextResponse.json({
         success: true,
-        message: mailResult.success
-          ? `Hemos enviado un nuevo enlace de verificación a ${cleanEmail}. Por favor revisa tu bandeja de entrada o carpeta de spam.`
-          : `Enlace de verificación generado para ${cleanEmail}. Puedes activarla directamente a continuación o configurar SMTP en Dokploy.`,
-        verificationUrl,
-        emailSent: mailResult.success,
-        smtpConfigured: mailResult.configured,
+        message: "Tu cuenta ha sido confirmada exitosamente. Ya puedes iniciar sesión con tu contraseña.",
+        alreadyVerified: true,
       });
     }
 
@@ -88,78 +50,97 @@ export async function POST(req: NextRequest) {
     }
 
     // =========================================================================
-    // ACCIÓN 2: REGISTRO DE NUEVA BÓVEDA CON VERIFICACIÓN OBLIGATORIA
+    // ACCIÓN 2: REGISTRO DE NUEVA BÓVEDA CON ACCESO DIRECTO
     // =========================================================================
     if (action === "register") {
       const existingUser = await findUserByEmail(cleanEmail);
       if (existingUser) {
-        if (!existingUser.emailVerified) {
-          const baseUrl = getBaseAppUrl(req);
-          const verificationUrl = existingUser.verificationToken
-            ? `${baseUrl}/verify?token=${existingUser.verificationToken}`
-            : `${baseUrl}/verify?token=${generateToken()}`;
+        // Si ya existe y la contraseña coincide, le damos acceso inmediato
+        if (verifyPassword(password, existingUser.passwordHash)) {
+          await autoConfirmUser(cleanEmail);
+          const sessionToken = Buffer.from(
+            JSON.stringify({
+              userId: existingUser.id,
+              email: existingUser.email,
+              name: existingUser.name,
+              emailVerified: true,
+              issuedAt: Date.now(),
+            })
+          ).toString("base64");
 
-          return NextResponse.json(
-            {
-              success: false,
-              requiresVerification: true,
-              error: "Ya existe una cuenta con este correo pero aún no ha sido verificada. Puedes activarla directamente o solicitar un reenvío.",
-              email: cleanEmail,
-              verificationUrl,
+          const response = NextResponse.json({
+            success: true,
+            message: "Acceso autorizado a tu bóveda existente.",
+            user: {
+              id: existingUser.id,
+              email: existingUser.email,
+              name: existingUser.name,
+              emailVerified: true,
             },
-            { status: 409 }
-          );
+          });
+
+          response.cookies.set("finanzas_session", sessionToken, {
+            httpOnly: false,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 60 * 60 * 24 * 30, // 30 días
+            path: "/",
+          });
+
+          return response;
         }
+
         return NextResponse.json(
           { success: false, error: "Ya existe una cuenta registrada con este correo electrónico." },
           { status: 409 }
         );
       }
 
-      const verificationToken = generateToken();
       const userName = name?.trim() || cleanEmail.split("@")[0];
 
-      await createUser({
+      const user = await createUser({
         email: cleanEmail,
         name: userName,
         password,
-        verificationToken,
       });
 
-      const baseUrl = getBaseAppUrl(req);
-      const verificationUrl = `${baseUrl}/verify?token=${verificationToken}`;
-      const emailHtml = generateVerificationEmailHtml({
-        name: userName,
-        email: cleanEmail,
-        verificationUrl,
-        expiresHours: 24,
-      });
+      console.log(`[AUTH] Usuario registrado y verificado automáticamente: ${cleanEmail}`);
 
-      // Intentar enviar el correo mediante SMTP o Resend
-      const mailResult = await sendEmail({
-        to: cleanEmail,
-        subject: "Confirma tu cuenta | Bóveda Finanzas Personales",
-        html: emailHtml,
-        text: `Confirma tu cuenta de Bóveda Finanzas haciendo clic aquí: ${verificationUrl}`,
-      });
+      // Generar sesión activa de 30 días inmediatamente
+      const sessionToken = Buffer.from(
+        JSON.stringify({
+          userId: user.id,
+          email: user.email,
+          name: user.name,
+          emailVerified: true,
+          issuedAt: Date.now(),
+        })
+      ).toString("base64");
 
-      console.log(`[AUTH] Registro completado para ${cleanEmail}. Token generado. Enlace: ${verificationUrl} (Email enviado: ${mailResult.success})`);
-
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
-        requiresVerification: true,
-        message: mailResult.success
-          ? `Bóveda creada exitosamente. Hemos enviado un correo de confirmación a ${cleanEmail}. Por favor verifica tu bandeja de entrada o spam.`
-          : `Bóveda creada exitosamente para ${cleanEmail}. Puedes verificarla al instante con el botón de activación rápida a continuación.`,
-        email: cleanEmail,
-        verificationUrl,
-        emailSent: mailResult.success,
-        smtpConfigured: mailResult.configured,
+        message: "¡Bóveda creada exitosamente! Acceso concedido.",
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          emailVerified: true,
+        },
       });
+
+      response.cookies.set("finanzas_session", sessionToken, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 30, // 30 días
+        path: "/",
+      });
+
+      return response;
     }
 
     // =========================================================================
-    // ACCIÓN 3: INICIO DE SESIÓN CON BLOQUEO ESTRICTO SI NO ESTÁ VERIFICADO
+    // ACCIÓN 3: INICIO DE SESIÓN CON AUTO-CONFIRMACIÓN GARANTIZADA
     // =========================================================================
     if (action === "login") {
       const user = await findUserByEmail(cleanEmail);
@@ -180,26 +161,13 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // BLOQUEO CRÍTICO DE SEGURIDAD: Correo no verificado
+      // Auto-confirmar el usuario si estaba marcado como no verificado
       if (!user.emailVerified) {
-        const baseUrl = getBaseAppUrl(req);
-        const verificationUrl = user.verificationToken
-          ? `${baseUrl}/verify?token=${user.verificationToken}`
-          : `${baseUrl}/verify?token=${generateToken()}`;
-
-        return NextResponse.json(
-          {
-            success: false,
-            requiresVerification: true,
-            error: "Debes confirmar tu correo electrónico antes de ingresar a la bóveda. Puedes activarla directamente o solicitar un reenvío.",
-            email: cleanEmail,
-            verificationUrl,
-          },
-          { status: 403 }
-        );
+        await autoConfirmUser(cleanEmail);
+        user.emailVerified = true;
       }
 
-      // Usuario verificado: Crear sesión de 30 días
+      // Crear sesión de 30 días
       const sessionToken = Buffer.from(
         JSON.stringify({
           userId: user.id,

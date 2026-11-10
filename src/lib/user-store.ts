@@ -42,13 +42,17 @@ async function ensureUserTable() {
         "email" TEXT NOT NULL UNIQUE,
         "name" TEXT,
         "passwordHash" TEXT NOT NULL,
-        "emailVerified" BOOLEAN NOT NULL DEFAULT false,
+        "emailVerified" BOOLEAN NOT NULL DEFAULT true,
         "verificationToken" TEXT UNIQUE,
         "resetToken" TEXT UNIQUE,
         "resetTokenExpiry" TIMESTAMP(3),
         "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+    // Confirmar automáticamente cualquier cuenta existente para evitar bloqueos
+    await prisma.$executeRawUnsafe(`
+      UPDATE "public"."User" SET "emailVerified" = true WHERE "emailVerified" = false;
     `);
   } catch (err) {
     // Si falla por permisos o conexión, se ignora y se procede con Prisma o memoria
@@ -80,11 +84,27 @@ export async function findUserByEmail(email: string): Promise<UserRecord | null>
   return memoryUsers.get(cleanEmail) || null;
 }
 
+export async function autoConfirmUser(email: string): Promise<void> {
+  const cleanEmail = email.trim().toLowerCase();
+  try {
+    await (prisma as any).user.update({
+      where: { email: cleanEmail },
+      data: { emailVerified: true, verificationToken: null },
+    });
+  } catch {}
+  const mem = memoryUsers.get(cleanEmail);
+  if (mem) {
+    mem.emailVerified = true;
+    mem.verificationToken = null;
+    mem.updatedAt = new Date();
+  }
+}
+
 export async function createUser(data: {
   email: string;
   name?: string;
   password: string;
-  verificationToken: string;
+  verificationToken?: string;
 }): Promise<UserRecord> {
   const cleanEmail = data.email.trim().toLowerCase();
   const userName = data.name?.trim() || cleanEmail.split("@")[0];
@@ -96,8 +116,8 @@ export async function createUser(data: {
     email: cleanEmail,
     name: userName,
     passwordHash,
-    emailVerified: false, // OBLIGATORIO: Comienza sin verificar
-    verificationToken: data.verificationToken,
+    emailVerified: true, // Confirmación automática inmediata
+    verificationToken: null,
     resetToken: null,
     resetTokenExpiry: null,
     createdAt: now,
@@ -111,8 +131,8 @@ export async function createUser(data: {
         email: record.email,
         name: record.name,
         passwordHash: record.passwordHash,
-        emailVerified: false,
-        verificationToken: record.verificationToken,
+        emailVerified: true,
+        verificationToken: null,
       },
     });
     return created as UserRecord;
@@ -126,8 +146,8 @@ export async function createUser(data: {
             email: record.email,
             name: record.name,
             passwordHash: record.passwordHash,
-            emailVerified: false,
-            verificationToken: record.verificationToken,
+            emailVerified: true,
+            verificationToken: null,
           },
         });
         return created as UserRecord;

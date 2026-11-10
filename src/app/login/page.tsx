@@ -152,23 +152,16 @@ function LoginContent() {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error || "Error al reenviar el correo.");
+        throw new Error(data.error || "Error al confirmar la cuenta.");
       }
 
-      setResendSuccess(data.message || "Enlace generado exitosamente.");
-      if (data.verificationUrl) {
-        setVerificationPending((prev) =>
-          prev
-            ? {
-                ...prev,
-                verificationUrl: data.verificationUrl,
-                smtpConfigured: data.smtpConfigured,
-              }
-            : null
-        );
-      }
+      setResendSuccess("¡Cuenta confirmada con éxito! Redirigiendo al formulario de acceso...");
+      setTimeout(() => {
+        setVerificationPending(null);
+        setMode("login");
+      }, 1000);
     } catch (err: any) {
-      setErrorMsg(err.message || "No se pudo reenviar el enlace.");
+      setErrorMsg(err.message || "No se pudo confirmar la cuenta.");
     } finally {
       setResendingEmail(false);
     }
@@ -285,27 +278,36 @@ function LoginContent() {
                 </div>
               </div>
 
-              {/* Tarjeta de Activación Inmediata con 1 Clic */}
-              {verificationPending.verificationUrl && (
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-950/60 via-teal-950/40 to-[#121212] border border-emerald-500/40 text-left flex flex-col gap-3 shadow-lg shadow-emerald-950/30">
-                  <div className="flex items-center gap-2 text-emerald-400">
-                    <Sparkles className="w-4 h-4 shrink-0 animate-pulse" />
-                    <span className="font-bold text-xs uppercase tracking-wider">
-                      Activación Inmediata de Bóveda
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    Si tu servidor en Dokploy aún no tiene configurado el correo SMTP o hay demora en tu bandeja de Gmail, puedes ingresar a tu cuenta inmediatamente con este botón:
-                  </p>
-                  <a
-                    href={verificationPending.verificationUrl}
-                    className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-900/30 active:scale-[0.98]"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Activar mi Bóveda y Entrar Ahora</span>
-                  </a>
+              {/* Tarjeta de Confirmación Inmediata */}
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-950/60 via-teal-950/40 to-[#121212] border border-emerald-500/40 text-left flex flex-col gap-3 shadow-lg shadow-emerald-950/30">
+                <div className="flex items-center gap-2 text-emerald-400">
+                  <CheckCircle2 className="w-5 h-5 shrink-0" />
+                  <span className="font-bold text-xs uppercase tracking-wider">
+                    Confirmación de Cuenta
+                  </span>
                 </div>
-              )}
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Haz clic abajo para confirmar tu cuenta y habilitar el acceso a tu bóveda patrimonial inmediatamente.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resendingEmail}
+                  className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98] disabled:opacity-50"
+                >
+                  {resendingEmail ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Confirmando cuenta...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Confirmar Cuenta y Acceder</span>
+                    </>
+                  )}
+                </button>
+              </div>
 
               {resendSuccess && (
                 <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2 text-left">
@@ -315,25 +317,6 @@ function LoginContent() {
               )}
 
               <div className="flex flex-col gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={handleResendVerification}
-                  disabled={resendingEmail}
-                  className="w-full h-11 rounded-xl bg-[#009fdb] hover:bg-[#0088bd] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98] disabled:opacity-50"
-                >
-                  {resendingEmail ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Generando nuevo enlace...</span>
-                    </>
-                  ) : (
-                    <>
-                      <RotateCcw className="w-4 h-4" />
-                      <span>Reenviar Enlace de Confirmación</span>
-                    </>
-                  )}
-                </button>
-
                 <button
                   type="button"
                   onClick={() => {
