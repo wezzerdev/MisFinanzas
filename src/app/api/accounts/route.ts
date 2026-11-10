@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
       currency = "MXN",
       color = "#009fdb",
       bankLogo = "BBVA",
+      cardLast4,
       creditLimit,
       cutoffDay,
       paymentDueDay,
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest) {
       currency,
       color: color || "#009fdb",
       bankLogo: bankLogo || "BBVA",
+      cardLast4: cardLast4 ? String(cardLast4).trim().slice(-4) : null,
       isArchived: false,
       creditLimit:
         creditLimit !== undefined && creditLimit !== null && creditLimit !== ""
@@ -103,6 +105,7 @@ export async function PATCH(req: NextRequest) {
       currency,
       color,
       bankLogo,
+      cardLast4,
       isArchived,
       creditLimit,
       cutoffDay,
@@ -123,6 +126,9 @@ export async function PATCH(req: NextRequest) {
     if (currency !== undefined) updateData.currency = currency;
     if (color !== undefined) updateData.color = color;
     if (bankLogo !== undefined) updateData.bankLogo = bankLogo;
+    if (cardLast4 !== undefined) {
+      updateData.cardLast4 = cardLast4 ? String(cardLast4).trim().slice(-4) : null;
+    }
     if (isArchived !== undefined) updateData.isArchived = Boolean(isArchived);
     if (creditLimit !== undefined) {
       updateData.creditLimit =

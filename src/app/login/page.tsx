@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -17,10 +17,15 @@ import {
   X,
   Loader2,
   AlertCircle,
+  CheckCircle2,
+  KeyRound,
+  RotateCcw,
 } from "lucide-react";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isVerifiedParam = searchParams.get("verified") === "true";
 
   const [mode, setMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
@@ -34,11 +39,27 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
 
+  // Estados de verificación de correo
+  const [verificationPending, setVerificationPending] = useState<{
+    email: string;
+    message: string;
+  } | null>(null);
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState<string | null>(null);
+
+  // Estados de recuperación de contraseña
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSuccess, setForgotSuccess] = useState<string | null>(null);
+  const [forgotError, setForgotError] = useState<string | null>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setResendSuccess(null);
 
-    // 1. Verificación obligatoria de Términos y Condiciones
+    // Verificación obligatoria de Términos y Condiciones
     if (!acceptedTerms) {
       setErrorMsg("Es obligatorio aceptar los Términos y Condiciones y el Aviso de Privacidad para acceder.");
       return;
@@ -63,7 +84,6 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Llamada al endpoint de autenticación segura
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -77,14 +97,25 @@ export default function LoginPage() {
 
       const data = await res.json();
 
+      // Caso 1: Requiere verificación de correo (Bloqueo de acceso)
+      if (data.requiresVerification) {
+        setVerificationPending({
+          email: data.email || email.trim(),
+          message:
+            data.message ||
+            data.error ||
+            "Debes confirmar tu correo electrónico antes de ingresar a la bóveda.",
+        });
+        return;
+      }
+
       if (!res.ok || !data.success) {
         throw new Error(data.error || "No se pudo autenticar. Verifica tus credenciales.");
       }
 
-      // Guardar sesión en cliente
+      // Usuario verificado: Guardar sesión y entrar al dashboard
       if (typeof window !== "undefined") {
         localStorage.setItem("finanzas_auth", JSON.stringify(data.user));
-        // Cookie fallback
         document.cookie = `finanzas_session=active_${Date.now()}; path=/; max-age=2592000; SameSite=Lax`;
       }
 
@@ -93,6 +124,68 @@ export default function LoginPage() {
       setErrorMsg(err.message || "Error al conectar con la bóveda. Intenta de nuevo.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!verificationPending?.email) return;
+    setResendingEmail(true);
+    setResendSuccess(null);
+
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "resend",
+          email: verificationPending.email,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Error al reenviar el correo.");
+      }
+
+      setResendSuccess(data.message || "Enlace enviado exitosamente. Revisa tu bandeja de entrada o spam.");
+    } catch (err: any) {
+      setErrorMsg(err.message || "No se pudo reenviar el enlace.");
+    } finally {
+      setResendingEmail(false);
+    }
+  };
+
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      setForgotError("Ingresa tu correo electrónico.");
+      return;
+    }
+
+    setForgotLoading(true);
+    setForgotError(null);
+    setForgotSuccess(null);
+
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail.trim() }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Error al solicitar restablecimiento.");
+      }
+
+      setForgotSuccess(
+        data.message ||
+          "Si tu correo está registrado, recibirás un enlace seguro para restablecer tu contraseña."
+      );
+    } catch (err: any) {
+      setForgotError(err.message || "Error al procesar la solicitud.");
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -124,188 +217,284 @@ export default function LoginPage() {
               <ShieldCheck className="w-7 h-7 stroke-[2.2]" />
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-1">
-              {mode === "login" ? "Acceso a tu Bóveda" : "Crear Bóveda Personal"}
+              {verificationPending
+                ? "Verificación de Correo"
+                : mode === "login"
+                ? "Acceso a tu Bóveda"
+                : "Crear Bóveda Personal"}
             </h1>
             <p className="text-xs text-slate-400 max-w-xs">
-              {mode === "login"
+              {verificationPending
+                ? "Confirma tu cuenta para activar la protección de tus datos financieros."
+                : mode === "login"
                 ? "Ingresa tus credenciales para administrar tus cuentas, tarjetas y deudas."
                 : "Registra tu cuenta para tener control privado de tus finanzas personales."}
             </p>
           </div>
 
-          {/* Sub-tabs: Iniciar Sesión / Registrarse */}
-          <div className="flex p-1 bg-[#0a0a0a] rounded-2xl border border-[#262626]">
-            <button
-              type="button"
-              onClick={() => {
-                setMode("login");
-                setErrorMsg(null);
-              }}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all min-h-[42px] ${
-                mode === "login"
-                  ? "bg-[#009fdb] text-white shadow-xs"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              Iniciar Sesión
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode("register");
-                setErrorMsg(null);
-              }}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all min-h-[42px] ${
-                mode === "register"
-                  ? "bg-[#009fdb] text-white shadow-xs"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              Registrarse
-            </button>
-          </div>
+          {/* Banner si acaba de verificar exitosamente desde el correo */}
+          {isVerifiedParam && !verificationPending && (
+            <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2.5">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+              <span>¡Tu correo ha sido verificado! Ya puedes ingresar con tu contraseña.</span>
+            </div>
+          )}
 
-          {/* Formulario */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {mode === "register" && (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  Nombre o Alias
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="Ej. Roberto Duarte"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="w-full bg-[#0a0a0a] border border-[#262626] rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-[#009fdb] min-h-[48px]"
-                  />
+          {/* VISTA 1: AVISO Y BLOQUEO DE VERIFICACIÓN DE CORREO PENDIENTE */}
+          {verificationPending ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col gap-4 text-center"
+            >
+              <div className="p-4 rounded-2xl bg-[#171717] border border-[#009fdb]/30 text-left flex flex-col gap-2.5">
+                <div className="flex items-center gap-2 text-[#009fdb]">
+                  <Mail className="w-4 h-4 animate-bounce" />
+                  <span className="font-bold text-xs uppercase tracking-wider">
+                    Bandeja de Entrada
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-300 leading-relaxed">
+                  {verificationPending.message}
+                </p>
+                <div className="px-3 py-2 rounded-xl bg-black/40 border border-white/10 font-mono text-xs text-white break-all">
+                  {verificationPending.email}
                 </div>
               </div>
-            )}
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Correo Electrónico
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="email"
-                  placeholder="tu@correo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full bg-[#0a0a0a] border border-[#262626] rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-[#009fdb] min-h-[48px]"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Contraseña
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full bg-[#0a0a0a] border border-[#262626] rounded-xl pl-10 pr-11 py-3 text-sm text-white focus:outline-none focus:border-[#009fdb] min-h-[48px]"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                  aria-label={showPassword ? "Ocultar clave" : "Mostrar clave"}
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            {mode === "register" && (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  Confirmar Contraseña
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    className="w-full bg-[#0a0a0a] border border-[#262626] rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-[#009fdb] min-h-[48px]"
-                  />
+              {resendSuccess && (
+                <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2 text-left">
+                  <Check className="w-4 h-4 shrink-0 text-emerald-400" />
+                  <span>{resendSuccess}</span>
                 </div>
-              </div>
-            )}
-
-            {/* CASILLA OBLIGATORIA: Términos y Condiciones */}
-            <div className="flex items-start gap-3 p-3 rounded-2xl bg-[#0a0a0a] border border-[#262626] mt-1">
-              <button
-                type="button"
-                role="checkbox"
-                aria-checked={acceptedTerms}
-                onClick={() => setAcceptedTerms(!acceptedTerms)}
-                className={`w-5 h-5 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 transition-all ${
-                  acceptedTerms
-                    ? "bg-[#009fdb] border-[#009fdb] text-white"
-                    : "border-slate-600 bg-transparent hover:border-slate-400"
-                }`}
-              >
-                {acceptedTerms && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-              </button>
-              <div className="text-[11px] text-slate-400 leading-tight">
-                <span>He leído y acepto obligatoriamente los </span>
-                <button
-                  type="button"
-                  onClick={() => setIsTermsModalOpen(true)}
-                  className="text-[#009fdb] hover:underline font-bold inline"
-                >
-                  Términos y Condiciones
-                </button>
-                <span> y el </span>
-                <button
-                  type="button"
-                  onClick={() => setIsTermsModalOpen(true)}
-                  className="text-[#009fdb] hover:underline font-bold inline"
-                >
-                  Aviso de Privacidad
-                </button>
-                <span> para usar la plataforma.</span>
-              </div>
-            </div>
-
-            {errorMsg && (
-              <div className="p-3 bg-rose-950/40 border border-rose-900/50 rounded-xl text-xs text-rose-400 font-medium flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
-
-            {/* Botón Principal de Acceso */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 px-4 bg-[#009fdb] hover:bg-[#0088bd] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#009fdb]/25 flex items-center justify-center gap-2 transition-all min-h-[48px] disabled:opacity-50 mt-1 active:scale-98"
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <>
-                  <span>{mode === "login" ? "Ingresar a mi Bóveda" : "Crear Bóveda"}</span>
-                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                </>
               )}
-            </button>
-          </form>
+
+              <div className="flex flex-col gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resendingEmail}
+                  className="w-full h-12 rounded-xl bg-[#009fdb] hover:bg-[#0088bd] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98] disabled:opacity-50"
+                >
+                  {resendingEmail ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Reenviando correo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="w-4 h-4" />
+                      <span>Reenviar Enlace de Confirmación</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVerificationPending(null);
+                    setErrorMsg(null);
+                    setResendSuccess(null);
+                  }}
+                  className="w-full h-11 rounded-xl border border-slate-700 bg-transparent text-slate-300 hover:text-white text-xs font-bold transition-colors"
+                >
+                  Volver al Formulario de Acceso
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            <>
+              {/* Sub-tabs: Iniciar Sesión / Registrarse */}
+              <div className="flex p-1 bg-[#0a0a0a] rounded-2xl border border-[#262626]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("login");
+                    setErrorMsg(null);
+                  }}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all min-h-[42px] ${
+                    mode === "login"
+                      ? "bg-[#009fdb] text-white shadow-xs"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  Iniciar Sesión
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("register");
+                    setErrorMsg(null);
+                  }}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all min-h-[42px] ${
+                    mode === "register"
+                      ? "bg-[#009fdb] text-white shadow-xs"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  Registrarse
+                </button>
+              </div>
+
+              {/* Formulario */}
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                {mode === "register" && (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Nombre o Alias
+                    </label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        placeholder="Ej. Roberto Duarte"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                        className="w-full bg-[#0a0a0a] border border-[#262626] rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-[#009fdb] min-h-[48px]"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Correo Electrónico
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      placeholder="tu@correo.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full bg-[#0a0a0a] border border-[#262626] rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-[#009fdb] min-h-[48px]"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Contraseña
+                    </label>
+                    {mode === "login" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForgotEmail(email);
+                          setForgotSuccess(null);
+                          setForgotError(null);
+                          setIsForgotModalOpen(true);
+                        }}
+                        className="text-[11px] font-semibold text-[#009fdb] hover:underline"
+                      >
+                        ¿Olvidaste tu contraseña?
+                      </button>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="w-full bg-[#0a0a0a] border border-[#262626] rounded-xl pl-10 pr-11 py-3 text-sm text-white focus:outline-none focus:border-[#009fdb] min-h-[48px]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                      aria-label={showPassword ? "Ocultar clave" : "Mostrar clave"}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {mode === "register" && (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Confirmar Contraseña
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••••••"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        className="w-full bg-[#0a0a0a] border border-[#262626] rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-[#009fdb] min-h-[48px]"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* CASILLA OBLIGATORIA: Términos y Condiciones */}
+                <div className="flex items-start gap-3 p-3 rounded-2xl bg-[#0a0a0a] border border-[#262626] mt-1">
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={acceptedTerms}
+                    onClick={() => setAcceptedTerms(!acceptedTerms)}
+                    className={`w-5 h-5 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 transition-all ${
+                      acceptedTerms
+                        ? "bg-[#009fdb] border-[#009fdb] text-white"
+                        : "border-slate-600 bg-transparent hover:border-slate-400"
+                    }`}
+                  >
+                    {acceptedTerms && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                  </button>
+                  <div className="text-[11px] text-slate-400 leading-tight">
+                    <span>He leído y acepto obligatoriamente los </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsTermsModalOpen(true)}
+                      className="text-[#009fdb] hover:underline font-bold inline"
+                    >
+                      Términos y Condiciones
+                    </button>
+                    <span> y el </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsTermsModalOpen(true)}
+                      className="text-[#009fdb] hover:underline font-bold inline"
+                    >
+                      Aviso de Privacidad
+                    </button>
+                    <span> para usar la plataforma.</span>
+                  </div>
+                </div>
+
+                {errorMsg && (
+                  <div className="p-3 bg-rose-950/40 border border-rose-900/50 rounded-xl text-xs text-rose-400 font-medium flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{errorMsg}</span>
+                  </div>
+                )}
+
+                {/* Botón Principal de Acceso */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 px-4 bg-[#009fdb] hover:bg-[#0088bd] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#009fdb]/25 flex items-center justify-center gap-2 transition-all min-h-[48px] disabled:opacity-50 mt-1 active:scale-98"
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <span>{mode === "login" ? "Ingresar a mi Bóveda" : "Crear Bóveda"}</span>
+                      <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                    </>
+                  )}
+                </button>
+              </form>
+            </>
+          )}
         </div>
       </main>
 
@@ -315,6 +504,92 @@ export default function LoginPage() {
           © {new Date().getFullYear()} Finanzas PWA · Acceso Privado y Seguro.
         </p>
       </footer>
+
+      {/* Modal: Olvidé mi Contraseña */}
+      <AnimatePresence>
+        {isForgotModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsForgotModalOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative z-10 w-full max-w-md bg-[#121212] border border-[#262626] rounded-3xl p-6 shadow-2xl flex flex-col gap-4"
+            >
+              <div className="flex items-center justify-between pb-2 border-b border-[#262626]">
+                <div className="flex items-center gap-2 text-white">
+                  <KeyRound className="w-4 h-4 text-[#009fdb]" />
+                  <h3 className="text-sm font-bold">Restablecer Contraseña</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsForgotModalOpen(false)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {forgotSuccess ? (
+                <div className="flex flex-col gap-3 py-2">
+                  <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30 text-emerald-300 text-xs">
+                    {forgotSuccess}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotModalOpen(false)}
+                    className="w-full h-11 rounded-xl bg-[#009fdb] text-white font-bold text-xs"
+                  >
+                    Entendido
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleForgotPasswordSubmit} className="flex flex-col gap-3.5">
+                  <p className="text-xs text-neutral-400">
+                    Ingresa el correo electrónico vinculado a tu cuenta para enviarte un enlace de restablecimiento seguro.
+                  </p>
+
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      placeholder="tu@correo.com"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      required
+                      className="w-full bg-[#0a0a0a] border border-[#262626] rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-[#009fdb] min-h-[48px]"
+                    />
+                  </div>
+
+                  {forgotError && (
+                    <div className="p-3 bg-rose-950/40 border border-rose-900/50 rounded-xl text-xs text-rose-400">
+                      {forgotError}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={forgotLoading}
+                    className="w-full h-12 rounded-xl bg-[#009fdb] hover:bg-[#0088bd] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98] disabled:opacity-50"
+                  >
+                    {forgotLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <span>Enviar Enlace de Recuperación</span>
+                    )}
+                  </button>
+                </form>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Modal de Términos y Condiciones */}
       <AnimatePresence>
@@ -387,5 +662,19 @@ export default function LoginPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-slate-400">
+          <Loader2 className="w-6 h-6 animate-spin text-[#009fdb]" />
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

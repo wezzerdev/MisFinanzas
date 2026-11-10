@@ -54,12 +54,26 @@ model Account {
   currency       String          @default("MXN")
   color          String?         @default("#009fdb")
   bankLogo       String?         @default("BBVA")
+  cardLast4      String?
   isArchived     Boolean         @default(false)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   transactions   Transaction[]
   recurringRules RecurringRule[]
   debts          Debt[]
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String?
+  passwordHash      String
+  emailVerified     Boolean   @default(false)
+  verificationToken String?   @unique
+  resetToken        String?   @unique
+  resetTokenExpiry  DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 model Category {

@@ -13,7 +13,12 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import TooltipHelp from "@/components/ui/TooltipHelp";
-import { StylizedBankLogo, MEXICAN_BANKS } from "@/components/forms/AccountForm";
+import {
+  StylizedBankLogo,
+  MEXICAN_BANKS,
+  MetallicEmvChip,
+  ContactlessWave,
+} from "@/components/forms/AccountForm";
 
 export interface AccountItem {
   id: string;
@@ -23,6 +28,7 @@ export interface AccountItem {
   currency: string;
   color?: string | null;
   bankLogo?: string | null;
+  cardLast4?: string | null;
   creditLimit?: number | null;
   cutoffDay?: number | null;
   paymentDueDay?: number | null;
@@ -68,7 +74,9 @@ export const AccountsGrid: React.FC<AccountsGridProps> = ({
       <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 pt-1 snap-x snap-mandatory">
         {accounts.map((acc) => {
           const isCash = acc.type === "CASH";
-          const lastFour = acc.id.slice(-4).toUpperCase();
+          const lastFour = acc.cardLast4
+            ? acc.cardLast4.trim().slice(-4)
+            : acc.id.slice(-4).toUpperCase();
 
           if (isCash) {
             return (
@@ -169,41 +177,41 @@ export const AccountsGrid: React.FC<AccountsGridProps> = ({
             <div
               key={acc.id}
               style={{
-                background: `linear-gradient(135deg, ${customColor} 0%, #121212 68%, #0a0a0a 100%)`,
+                background: `linear-gradient(135deg, ${customColor} 0%, #141414 65%, #080808 100%)`,
               }}
-              className="relative w-72 sm:w-80 h-44 rounded-3xl p-5 text-white shadow-card flex flex-col justify-between shrink-0 overflow-hidden cursor-pointer select-none transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] snap-center border border-white/15 group"
+              className="relative w-72 sm:w-80 h-44 rounded-3xl p-5 text-white shadow-2xl flex flex-col justify-between shrink-0 overflow-hidden cursor-pointer select-none transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] snap-center border border-white/20 group"
             >
+              {/* Resplandor metálico especular */}
               <div
-                className="absolute -top-12 -right-12 w-40 h-40 rounded-full blur-2xl pointer-events-none opacity-30"
+                className="absolute -top-12 -right-12 w-44 h-44 rounded-full blur-3xl pointer-events-none opacity-35"
                 style={{ backgroundColor: customColor }}
               />
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.08] via-transparent to-black/30 pointer-events-none" />
 
-              {/* Header: Bank Badge + Chip + Wifi + Settings */}
+              {/* Header: Banco + Chip EMV Metálico + Contactless + Ajustes */}
               <div className="flex items-center justify-between relative z-10 w-full">
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2.5 shrink-0">
                   <StylizedBankLogo bankId={acc.bankLogo || "BBVA"} size="sm" />
-                  <div className="w-8 h-6 rounded-md bg-gradient-to-tr from-amber-200 to-amber-400 shadow-inner flex items-center justify-center p-1 relative border border-amber-500/30 shrink-0">
-                    <div className="w-full h-full border border-amber-700/30 rounded-xs flex flex-col justify-around">
-                      <div className="h-0.5 bg-amber-700/20 w-full" />
-                      <div className="h-0.5 bg-amber-700/20 w-full" />
-                    </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black tracking-wide text-white truncate max-w-[130px] drop-shadow-sm">
+                      {acc.name}
+                    </span>
+                    <span className="text-[10px] font-bold text-white/70 uppercase tracking-wider">
+                      {label}
+                    </span>
                   </div>
-                  <Wifi className="w-3.5 h-3.5 text-white/70 rotate-90 shrink-0" />
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  <span
-                    className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full backdrop-blur-md shrink-0 flex items-center ${tagBg}`}
-                  >
-                    {label}
-                  </span>
+                  <MetallicEmvChip variant={acc.type === "CREDIT" ? "silver" : "gold"} size="sm" />
+                  <ContactlessWave className="w-4 h-4 text-white/80 rotate-90" />
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       onOpenSettings(acc);
                     }}
-                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white/80 hover:text-white flex items-center justify-center transition-all shrink-0"
+                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white/80 hover:text-white flex items-center justify-center transition-all shrink-0 ml-0.5"
                     aria-label="Configurar cuenta"
                   >
                     <Settings2 className="w-4 h-4" />
@@ -211,20 +219,17 @@ export const AccountsGrid: React.FC<AccountsGridProps> = ({
                 </div>
               </div>
 
-              {/* Middle: Account Title & Masked Card */}
+              {/* Middle: Masked Number en Monospace Neobanco */}
               <div
-                className="relative z-10 flex flex-col gap-1 w-full overflow-hidden"
+                className="relative z-10 flex flex-col gap-0.5 w-full overflow-hidden"
                 onClick={() => onSelectAccount && onSelectAccount(acc)}
               >
-                <span className="text-xs font-semibold text-white/95 tracking-wide truncate block w-full">
-                  {acc.name}
-                </span>
                 <div className="flex items-center justify-between gap-2 w-full">
-                  <span className="text-[11px] font-mono tracking-widest text-white/50 shrink-0">
+                  <span className="font-mono text-sm tracking-[0.25em] text-white/90 drop-shadow-sm">
                     •••• •••• •••• {lastFour}
                   </span>
                   {acc.type === "CREDIT" && (acc.cutoffDay || acc.paymentDueDay) && (
-                    <span className="text-[10px] font-semibold text-[#009fdb] bg-[#153D64]/50 border border-[#009fdb]/30 px-2 py-0.5 rounded-md truncate max-w-[130px] shrink-0">
+                    <span className="text-[10px] font-semibold text-[#009fdb] bg-[#153D64]/60 border border-[#009fdb]/40 px-2 py-0.5 rounded-md truncate max-w-[130px] shrink-0 backdrop-blur-md">
                       {acc.cutoffDay ? `Corte ${acc.cutoffDay}` : ""}
                       {acc.cutoffDay && acc.paymentDueDay ? " · " : ""}
                       {acc.paymentDueDay ? `Pago ${acc.paymentDueDay}` : ""}

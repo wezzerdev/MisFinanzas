@@ -37,6 +37,7 @@ CREATE TABLE "public"."Account" (
     "currency" TEXT NOT NULL DEFAULT 'MXN',
     "color" TEXT DEFAULT '#009fdb',
     "bankLogo" TEXT DEFAULT 'BBVA',
+    "cardLast4" TEXT,
     "isArchived" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -115,6 +116,25 @@ CREATE TABLE "public"."RecurringRule" (
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "RecurringRule_pkey" PRIMARY KEY ("id")
+);
+
+-- 7. TABLA: User (Control de Usuarios, Bóvedas Cifradas y Verificación de Correo)
+CREATE TABLE IF NOT EXISTS "public"."User" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "name" TEXT,
+    "passwordHash" TEXT NOT NULL,
+    "emailVerified" BOOLEAN NOT NULL DEFAULT false,
+    "verificationToken" TEXT,
+    "resetToken" TEXT,
+    "resetTokenExpiry" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "User_email_key" UNIQUE ("email"),
+    CONSTRAINT "User_verificationToken_key" UNIQUE ("verificationToken"),
+    CONSTRAINT "User_resetToken_key" UNIQUE ("resetToken")
 );
 
 -- 8. ÍNDICES DE RENDIMIENTO
